@@ -1983,6 +1983,22 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 	 * @return bool
 	 */
 	static function saveDomain( $user, $domain ) {
+		/**
+		 * In AutoAuth scenarios the 'autoAuthSetup' method gets called in
+		 * "LdapAutoAuthentication::Authenticate" which is a handler to
+		 * "UserLoadAfterLoadFromSession" hook.
+		 * The primary authentication provider calls
+		 * "LdapAuthenticationPlugin::initUser", which saves the domain to the
+		 * database. Since AuthManager the hook seems to be called _after_
+		 * "initUser", therefore the $wgLDAPAutoAuthDomain configuration is not
+		 * being used.
+		 * As a quick workaround we fall back to $wgLDAPAutoAuthDomain whenever
+		 * $domain is null.
+		 */
+		if( !$domain ) {
+			$domain = LdapAuthenticationPlugin::getInstance()->getConf( 'AutoAuthDomain' );
+		}
+
 		$user_id = $user->getId();
 		if ( $user_id != 0 ) {
 			$dbw = wfGetDB( DB_MASTER );
